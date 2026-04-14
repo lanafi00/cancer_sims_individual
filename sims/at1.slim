@@ -1,0 +1,165 @@
+initialize() {
+			
+	initializeSLiMModelType("nonWF");
+
+	// DO SOME SCALING
+	defineConstant('Q', 10000);
+	
+	// Command-line Arguments:
+	defineConstant('base_mut_rate', 5e-8);
+	defineConstant('store_dir', '.');
+	defineConstant('job_id', 1);
+	defineConstant('param_id', 1);
+	defineConstant('dose_drug_1_mono', 0.9);
+	
+
+	//Current drug level, toggled between 0 and dose_drug_1_mono
+	defineGlobal('dose_drug_1', 0.0);
+    //Turnover used to set fitness scaling
+	defineConstant('turn_over_rate', 0.30);
+
+    //New param for size of population before treatment intervals begin
+	defineConstant('starting_popsize', 1000);
+
+    //Interval between appointments 
+    defineConstant('appointment_interval', 1);
+
+    //Size of tumor before treatment starts and stops
+    defineConstant('upper_threshold', 1000);
+    defineConstant('lower_threshold', 500);
+
+    //Percentage of starting size of tumor at progression (when sim stops)
+    defineConstant('progression', 2);
+    
+    //Global to keep track of tumor size at last appointment
+    defineGlobal('previousSize', 0);
+    
+    //Percentage to multiply drug dose by when tumor size drops
+    defineConstant('reduction', 0.7);
+
+    // Derived mutation rate actually used in SLiM after scaling.
+    // Requires base_mut_rate to be provided from CLI.
+	defineConstant('mut_rate', base_mut_rate*Q);
+
+    // Derived scaling factor applied to the population.
+    // In nonWF, this affects realized fitness/survival dynamics; it is not a direct “fraction killed”.
+	defineGlobal('fitness_scaling', 1-turn_over_rate);
+	
+
+	
+	defineGlobal('log_file', store_dir + '/log_' + asString(param_id) + '_' + asString(job_id) + '.csv');
+
+    //One mutation type
+	initializeMutationType("m1", 1.0, "f", 0);
+	m1.mutationStackPolicy = "f";
+
+	initializeGenomicElementType("g1", c(m1), c(1));
+	initializeMutationRate(mut_rate);
+	initializeGenomicElement(g1, 0, 0);
+	initializeRecombinationRate(0);
+}
+
+reproduction(){    
+	o1 = subpop.addCloned(individual);
+}
+
+fitnessEffect(p1){
+	m1_i = asInteger(individual.countOfMutationsOfType(m1) > 0);
+	
+	fitness = (1 - dose_drug_1*(1-m1_i));
+	
+	return(fitness);
+
+}
+
+function (void)write_to_log(string$ sim_stage)
+{
+    if (p1.individualCount > 0){
+        m1_freq = sum(p1.individuals.countOfMutationsOfType(m1) > 0) / p1.individualCount;}
+    else{
+        m1_freq = 0;}
+
+    count_mat = c(param_id, job_id, sim.cycle, current_phase,
+                  m1_freq,
+                  base_mut_rate, dose_drug_1,
+                  p1.individualCount, Q, job_id, sim_stage);
+
+    writeFile(log_file, paste(count_mat, sep=","), append=T);
+}
+
+
+//Checks population size, enters treatment phase if population greater  than starting_popsize
+function (void)check_population(void){
+	if (current_phase == 'treatment'){
+		print("intreatment");
+		if ((length(p1.individuals) < previousSize) & (length(p1.individuals) < starting_popsize)){
+            defineGlobal('dose_drug_1', dose_drug_1 * reduction);
+            print("reducing because tumor shrank");
+      }
+      if (length(p1.individuals) >= starting_popsize){
+      	defineGlobal('dose_drug_1', dose_drug_1_mono);
+      	print("above threshold, setting drug");
+      }
+     defineGlobal('previousSize', length(p1.individuals));
+     community.registerEarlyEvent(NULL, '{check_population();}', sim.cycle + appointment_interval, sim.cycle + appointment_interval);
+     print("appointment registered for tick " + (sim.cycle + appointment_interval));
+	}
+	if (current_phase == 'expansion'){
+		print("in expansion");
+		if (length(p1.individuals) < starting_popsize){
+			community.registerEarlyEvent(NULL, '{check_population();}', sim.cycle + 1, sim.cycle + 1);
+		}
+		if (length(p1.individuals) >= starting_popsize) {
+    			defineGlobal('current_phase', 'treatment');
+    			print("switching to treatment" + sim.cycle);
+         	defineGlobal('dose_drug_1', dose_drug_1_mono);
+         	defineGlobal('previousSize', length(p1.individuals));
+        		community.registerEarlyEvent(NULL, '{check_population();}', sim.cycle + appointment_interval, sim.cycle + appointment_interval);
+        		print("appointment registered for tick " + (sim.cycle + appointment_interval));
+		}
+	}
+}
+
+
+
+function (void)end_simulation(void){
+	sim.simulationFinished();	
+}
+
+
+1 early() {
+
+	sim.addSubpop("p1", 1);
+    p1.fitnessScaling = fitness_scaling;
+	community.registerEarlyEvent(NULL, "{check_population();}", sim.cycle + 1, sim.cycle + 1);
+	log_headers = c("param_id", "job_id", "cycle", "phase",
+                "freq_m1",
+                "base_mut_rate", "dose_drug_1",
+                "N", "Q", "replicate", "sim_stage");
+
+	if (!fileExists(log_file)){
+		to_write = paste(log_headers, sep=',');
+		writeFile(log_file, to_write);
+	}
+
+	defineGlobal('current_phase', 'expansion');
+	
+}
+
+early() {
+
+	write_to_log('early');
+}
+
+late() {
+if (current_phase == 'treatment'){
+	if ((length(p1.individuals) > starting_popsize*progression) | length(p1.individuals) == 0){
+		print("endingconditionreached");
+		end_simulation();
+	}
+}
+else if (length(p1.individuals) == 0){
+		print("endingconditionreached");
+		end_simulation();
+}
+}
