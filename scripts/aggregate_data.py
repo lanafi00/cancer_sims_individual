@@ -9,8 +9,8 @@ def parse_data(sim_dir, output_file):
     params_df = pd.read_csv(params_file)
     fraction_extinct = []
     mut_rates = []
-    second_strike_lags = []
-    for params_df_row in tqdm(params_df.iterrows(), total=len(params_df)):
+    doses = []
+    for _, params_df_row in tqdm(params_df.iterrows(), total=len(params_df)):
         mut_rate = params_df_row.base_mut_rate
         dose = params_df_row.dose_drug_1_mono 
         param_id = params_df_row.param_id
@@ -24,6 +24,7 @@ def parse_data(sim_dir, output_file):
             rep_final_Ns.append(final_N)
         fraction_extinct.append(np.mean([N == 0 for N in rep_final_Ns]))
         mut_rates.append(mut_rate)
+        doses.append(dose)
         #second_strike_lags.append(second_strike_lag)
 
     results_df = pd.DataFrame({
@@ -42,3 +43,4 @@ if __name__ == "__main__":
     args = argpaser.parse_args()
     sims_dir = Path(args.sims_dir)
     output_file = Path(args.output)
+    parse_data(Path(args.sims_dir), Path(args.output))  # this line was missing
