@@ -6,11 +6,11 @@ initialize() {
 	defineConstant('Q', 10000);
 	
 	// Command-line Arguments:
-	defineConstant('base_mut_rate', 5e-8);
-	defineConstant('store_dir', '.');
-	defineConstant('job_id', 1);
-	defineConstant('param_id', 1);
-	defineConstant('dose_drug_1_mono', 0.9);
+	//defineConstant('base_mut_rate', 5e-8);
+	//defineConstant('store_dir', '.');
+	//defineConstant('job_id', 1);
+	//defineConstant('param_id', 1);
+	//defineConstant('dose_drug_1_mono', 0.9);
 
 	//Current drug level, toggled between 0 and dose_drug_1_mono
 	defineGlobal('dose_drug_1', 0.0);
@@ -18,14 +18,14 @@ initialize() {
 	defineConstant('turn_over_rate', 0.30);
 
     //New param for size of population before treatment intervals begin
-	defineConstant('starting_popsize', 1000);
+	//defineConstant('starting_popsize', 1000);
 
     //Interval between appointments 
-    defineConstant('appointment_interval', 1);
+    //defineConstant('appointment_interval', 1);
 
     //Size of tumor before treatment starts and stops
-    defineConstant('upper_threshold', 1000);
-    defineConstant('lower_threshold', 500);
+    //defineConstant('upper_threshold', 1000);
+    //defineConstant('lower_threshold', 500);
 
     //Percentage of starting size of tumor at progression (when sim stops)
     defineConstant('progression', 2);

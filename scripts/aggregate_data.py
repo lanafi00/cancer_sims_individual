@@ -11,8 +11,8 @@ def parse_data(sim_dir, output_file):
     mut_rates = []
     second_strike_lags = []
     for params_df_row in tqdm(params_df.iterrows(), total=len(params_df)):
-        mut_rate = params_df_row.mut_rate
-        second_strike_lag = params_df_row.second_strike_lag
+        mut_rate = params_df_row.base_mut_rate
+        dose = params_df_row.dose_drug_1_mono 
         param_id = params_df_row.param_id
         #fitness_cost = params_df_row.fitness_cost
         rep_final_Ns = []
@@ -24,14 +24,14 @@ def parse_data(sim_dir, output_file):
             rep_final_Ns.append(final_N)
         fraction_extinct.append(np.mean([N == 0 for N in rep_final_Ns]))
         mut_rates.append(mut_rate)
-        second_strike_lags.append(second_strike_lag)
+        #second_strike_lags.append(second_strike_lag)
 
     results_df = pd.DataFrame({
-        "mut_rate": mut_rates,
-        "second_strike_lag": second_strike_lags,
+        "base_mut_rate": mut_rates,
+        "dose_drug_1_mono": doses,
         "fraction_extinct": fraction_extinct
     })
-    results_df = results_df.sort_values(by=["mut_rate", "second_strike_lag"])
+    results_df = results_df.sort_values(by=["base_mut_rate", "dose_drug_1_mono"])
     results_df.to_csv(output_file, index=False)
 
 if __name__ == "__main__":
