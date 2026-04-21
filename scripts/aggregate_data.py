@@ -10,19 +10,24 @@ def parse_data(sim_dir, output_file):
     fraction_extinct = []
     mut_rates = []
     doses = []
+    mean_final_cycles = []
     for _, params_df_row in tqdm(params_df.iterrows(), total=len(params_df)):
         mut_rate = params_df_row.base_mut_rate
         dose = params_df_row.dose_drug_1_mono 
-        param_id = params_df_row.param_id
+        param_id = int(params_df_row.param_id)
         #fitness_cost = params_df_row.fitness_cost
         rep_final_Ns = []
+        rep_final_cycles = []
         replicate_files = list(sim_dir.glob(f"log_{param_id}_*.csv"))
         for rep_file in replicate_files:
             file_df = pd.read_csv(rep_file)
             file_df.fillna(0, inplace=True)
             final_N = file_df.iloc[-1].N
+            final_cycle = file_df.iloc[-1].cycle
             rep_final_Ns.append(final_N)
+            rep_final_cycles.append(final_cycle)
         fraction_extinct.append(np.mean([N == 0 for N in rep_final_Ns]))
+        mean_final_cycles.append(np.mean(rep_final_cycles))
         mut_rates.append(mut_rate)
         doses.append(dose)
         #second_strike_lags.append(second_strike_lag)
