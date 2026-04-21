@@ -35,7 +35,7 @@ def parse_data(sim_dir, output_file):
     results_df = pd.DataFrame({
         "base_mut_rate": mut_rates,
         "dose_drug_1_mono": doses,
-        "fraction_extinct": fraction_extinct
+        "fraction_extinct": fraction_extinct,
         "mean_final_cycle": mean_final_cycles
     })
     results_df = results_df.sort_values(by=["base_mut_rate", "dose_drug_1_mono"])
