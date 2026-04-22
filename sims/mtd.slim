@@ -16,7 +16,7 @@ initialize() {
 	//Current drug level, toggled between 0 and dose_drug_1_mono
 	defineGlobal('dose_drug_1', 0.0);
     //Turnover used to set fitness scaling
-	defineConstant('turn_over_rate', 0.30);
+	defineConstant('turn_over_rate', 0.20);
 
     //New param for size of population before treatment intervals begin
 	//defineConstant('starting_popsize', 1000);
@@ -91,6 +91,7 @@ function (void)check_population(void){
             community.registerEarlyEvent(NULL, '{check_population();}', sim.cycle + 1, sim.cycle + 1);
         }
         if (length(p1.individuals) >= starting_popsize) {
+            p1.fitnessScaling = fitness_scaling;
             defineGlobal('current_phase', 'treatment');
             defineGlobal('dose_drug_1', dose_drug_1_mono);
             print("switching to treatment at cycle " + sim.cycle);
@@ -108,7 +109,6 @@ function (void)end_simulation(void){
 1 early() {
 
 	sim.addSubpop("p1", 1);
-    p1.fitnessScaling = fitness_scaling;
 	community.registerEarlyEvent(NULL, "{check_population();}", sim.cycle + 1, sim.cycle + 1);
 	log_headers = c("param_id", "job_id", "cycle", "phase",
                 "freq_m1",
